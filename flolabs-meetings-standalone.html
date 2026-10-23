@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conversations | FloLabs Innovations Group</title>
+<link rel="icon" href="uploads/flolabs-library1/public/logos/logo-87ef29e9.png">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial,sans-serif;background:#f2f2f2;color:#00080d}
+html.dark body{background:#00080d;color:#f2f2f2}
+a{color:inherit;text-decoration:none}
+.nav{position:fixed;inset:0 0 auto;z-index:20;display:flex;gap:1rem;align-items:center;padding:.8rem 1.2rem;background:#0d1424;color:#fff}
+.nav nav{display:flex;gap:1rem;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.hero{background:#0d1424;color:#fff;padding:7rem 1.5rem 2rem}
+.hero h1{font-family:Outfit,sans-serif;font-size:clamp(2rem,5vw,3rem);font-weight:500;margin:.4rem 0}
+.kicker{color:#7eb6ff;letter-spacing:.18em;font-size:.75rem;font-weight:700}
+.wrap{max-width:72rem;margin:0 auto;padding:2rem 1.2rem 4rem}
+.tools{display:flex;gap:.6rem}
+.tools input,.tools button{border:1px solid #cdd3dc;border-radius:999px;padding:.7rem 1rem;font:inherit;background:#fff}
+html.dark .tools input,html.dark .tools button,html.dark .side,html.dark .card{background:#061626;color:#f2f2f2;border-color:#1e3a5a}
+.layout{display:grid;grid-template-columns:1.6fr .85fr;gap:1.5rem;margin-top:1.5rem}
+.player{background:#000;border-radius:1.4rem;overflow:hidden}
+.player iframe,.player .empty{width:100%;aspect-ratio:16/9;border:0}
+.empty{display:flex;align-items:center;justify-content:center;color:#fff}
+.tabs{display:flex;gap:.5rem;border-bottom:1px solid #cdd3dc;margin-top:1rem}
+.tabs button{border:0;background:none;font:inherit;padding:.6rem .2rem;cursor:pointer}
+.tabs .on{font-weight:700;border-bottom:2px solid #00349b}
+.side,.card{background:#fff;border:1px solid #cdd3dc;border-radius:1.4rem}
+.side{padding:1rem;max-height:70vh;overflow:auto}
+.side button{display:flex;gap:.6rem;width:100%;text-align:left;border:0;background:transparent;font:inherit;padding:.6rem;border-radius:1rem;cursor:pointer}
+.side .on{background:rgba(0,52,155,.1)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:2rem}
+.card img{width:100%;aspect-ratio:16/9;object-fit:cover}
+.card h3{font-size:1rem;margin:.6rem .8rem .8rem}
+@media(max-width:900px){.layout,.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="nav">
+  <a href="http://localhost:3000/"><img src="uploads/flolabs-library1/public/logos/logo-87ef29e9.png" alt="" width="36" height="36"></a>
+  <nav>
+    <a href="http://localhost:3000/">Home</a>
+    <a href="flolabs-about-standalone.html">About</a>
+    <a href="http://localhost:3000/#projects">Projects</a>
+    <a href="flolabs-meetings-standalone.html">Meetings</a>
+  </nav>
+  <button type="button" style="margin-left:auto;border:0;background:transparent;color:inherit;cursor:pointer" onclick="document.documentElement.classList.toggle('dark')">Theme</button>
+</header>
+<section class="hero">
+  <p class="kicker">FloLabs Conversations</p>
+  <h1>Conversations</h1>
+  <p>Ideas, perspectives, and conversations shaping the future of technology.</p>
+</section>
+<div class="wrap">
+  <div class="tools">
+    <input id="q" placeholder="Search meetings, topics, or speakers..." style="flex:1">
+    <button type="button" id="filter">Filter</button>
+  </div>
+  <div id="dates" hidden style="margin-top:.8rem"></div>
+  <div class="layout">
+    <div>
+      <div class="player" id="player"></div>
+      <h2 id="title"></h2>
+      <p id="meta"></p>
+      <div class="tabs">
+        <button type="button" class="on" id="tab-overview">Overview</button>
+        <button type="button" id="tab-transcript">Transcript</button>
+      </div>
+      <div id="overview"></div>
+      <div id="transcript" hidden>
+        <p>Transcript loads from the running site at <a href="http://localhost:3000/conversations">localhost:3000/conversations</a>. This file lists meetings only when that app is open.</p>
+      </div>
+    </div>
+    <aside class="side">
+      <h2>Series</h2>
+      <p id="count"></p>
+      <ol id="list" style="list-style:none;padding:0"></ol>
+    </aside>
+  </div>
+  <h2>Related conversations</h2>
+  <div class="cards" id="cards"></div>
+</div>
+<script>
+const APP='http://localhost:3000';
+let meetings=[], selected=null, date='all';
+function load(){
+  document.getElementById('overview').textContent='Unable to load conversations. Open the live page at '+APP+'/conversations while the Next app is running.';
+  document.getElementById('player').innerHTML='<div class="empty">Video not available in this file.</div>';
+  document.getElementById('count').textContent='0 meetings';
+}
+function render(){
+  const q=document.getElementById('q').value.trim().toLowerCase();
+  const visible=meetings.filter(m=>{
+    if(date!=='all'&&m.date!==date) return false;
+    if(!q) return true;
+    return [m.title,m.date,m.summary,...(m.highlights||[])].join(' ').toLowerCase().includes(q);
+  });
+  document.getElementById('count').textContent=meetings.length+' meetings';
+  document.getElementById('list').innerHTML=visible.map((m,i)=>'<li><button type="button" class="'+(selected&&m.id===selected.id?'on':'')+'" data-id="'+m.id+'"><span>'+String(i+1).padStart(2,'0')+'</span><span><b>'+m.title+'</b><br><small>'+[m.date,m.durationLabel].filter(Boolean).join(' · ')+'</small></span></button></li>').join('');
+  document.querySelectorAll('#list button').forEach(btn=>btn.onclick=()=>{selected=meetings.find(m=>m.id===btn.dataset.id);render()});
+  if(!selected) return;
+  const embed=selected.youtubeId?'<iframe title="'+selected.title+'" src="https://www.youtube.com/embed/'+selected.youtubeId+'?rel=0" allowfullscreen></iframe>':'<div class="empty">Video not available for this conversation.</div>';
+  document.getElementById('player').innerHTML=embed;
+  document.getElementById('title').textContent=selected.title;
+  document.getElementById('meta').textContent=[selected.date,selected.durationLabel].filter(Boolean).join(' · ');
+  document.getElementById('overview').textContent=selected.summary||'No overview available for this conversation.';
+  document.getElementById('cards').innerHTML=meetings.filter(m=>m.id!==selected.id).map(m=>'<a class="card" href="'+APP+'/conversations/'+m.id+'">'+(m.youtubeId?'<img alt="" src="https://i.ytimg.com/vi/'+m.youtubeId+'/hqdefault.jpg">':'<div class="empty"></div>')+'<h3>'+m.title+'</h3></a>').join('');
+}
+document.getElementById('q').oninput=render;
+document.getElementById('tab-overview').onclick=()=>{document.getElementById('overview').hidden=false;document.getElementById('transcript').hidden=true};
+document.getElementById('tab-transcript').onclick=()=>{document.getElementById('overview').hidden=true;document.getElementById('transcript').hidden=false};
+load();
+</script>
+</body>
+</html>
